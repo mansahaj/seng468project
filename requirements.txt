@@ -2,3 +2,5 @@ fastapi
 uvicorn
 python-multipart
 PyJWT
+sqlalchemy
+psycopg2-binary

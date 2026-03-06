@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
 from pydantic import BaseModel
-import uuid
 import jwt
+from app.database import get_db
+from app.models.user import User
 
 router = APIRouter()
 
-# Mock database
-users_db = {}
 SECRET_KEY = "my_super_secret_key"
 
 class UserCredentials(BaseModel):
@@ -14,24 +14,27 @@ class UserCredentials(BaseModel):
     password: str
 
 @router.post("/signup")
-async def signup(credentials: UserCredentials):
-    if credentials.username in users_db:
+async def signup(credentials: UserCredentials, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.username == credentials.username).first()
+    if db_user:
         raise HTTPException(status_code=409, detail="Username already exists")
     
-    user_id = str(uuid.uuid4())
-    users_db[credentials.username] = {
-        "password": credentials.password,
-        "user_id": user_id
-    }
+    new_user = User(
+        username=credentials.username, 
+        password_hash=credentials.password # In production, this MUST be hashed
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
     
-    return {"message": "User created successfully", "user_id": user_id}
+    return {"message": "User created successfully", "user_id": new_user.id}
 
 @router.post("/login")
-async def login(credentials: UserCredentials):
-    user = users_db.get(credentials.username)
-    if not user or user["password"] != credentials.password:
+async def login(credentials: UserCredentials, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == credentials.username).first()
+    if not user or user.password_hash != credentials.password:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     token = jwt.encode({"sub": credentials.username}, SECRET_KEY, algorithm="HS256")
     
-    return {"token": token, "user_id": user["user_id"]}
+    return {"token": token, "user_id": user.id}

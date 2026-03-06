@@ -2,6 +2,11 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from .routers import auth, documents, search
+from .database import engine, Base
+from .models import user
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Semantic Retrieval API")
 
