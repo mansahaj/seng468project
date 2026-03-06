@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantic Retrieval System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Auth Section -->
+        <div id="auth-section" class="card">
+            <h2>Semantic Search Login</h2>
+            <div class="tabs">
+                <button id="tab-login" class="active">Login</button>
+                <button id="tab-signup">Sign Up</button>
+            </div>
+            
+            <form id="auth-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" id="auth-submit" class="btn primary">Login</button>
+            </form>
+            <p id="auth-message"></p>
+        </div>
+
+        <!-- Main Dashboard Section (Hidden by default) -->
+        <div id="dashboard-section" style="display: none;">
+            <header>
+                <h2>Semantic Retrieval Dashboard</h2>
+                <button id="logout-btn" class="btn secondary">Logout</button>
+            </header>
+
+            <div class="dashboard-grid">
+                <!-- Search Panel -->
+                <div class="panel card">
+                    <h3>Search Documents</h3>
+                    <div class="search-bar">
+                        <input type="text" id="search-query" placeholder="e.g. machine learning optimization">
+                        <button id="search-btn" class="btn primary">Search</button>
+                    </div>
+                    <div id="search-results" class="results-container">
+                        <p class="placeholder-text">Enter a query to see semantic search results.</p>
+                    </div>
+                </div>
+
+                <!-- Document Management Panel -->
+                <div class="panel card">
+                    <h3>My Documents</h3>
+                    <div class="upload-section">
+                        <input type="file" id="pdf-upload" accept=".pdf" />
+                        <button id="upload-btn" class="btn primary">Upload PDF</button>
+                        <p id="upload-status"></p>
+                    </div>
+                    <div class="doc-list-header">
+                        <h4>Uploaded Files</h4>
+                        <button id="refresh-docs-btn" class="btn small">Refresh</button>
+                    </div>
+                    <ul id="document-list" class="doc-list">
+                        <!-- Documents will be populated here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>

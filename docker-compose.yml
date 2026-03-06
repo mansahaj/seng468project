@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - ENVIRONMENT=development
+      - SECRET_KEY=your_secret_key_here
+    volumes:
+      - ./app:/app/app # Live reload for dev
