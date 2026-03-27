@@ -1,13 +1,9 @@
 from fastapi import APIRouter, Header, HTTPException, Query, Depends
 from typing import Optional
+from app.storage import chunks_db
+from app.auth_utils import get_current_user
 
 router = APIRouter()
-
-def get_current_user(authorization: Optional[str] = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid token")
-    # In a real app we decode the JWT token here
-    return "testuser"
 
 @router.get("")
 async def search_documents(q: str = Query(..., description="The query to search for"), user: str = Depends(get_current_user)):

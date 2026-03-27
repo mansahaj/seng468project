@@ -6,6 +6,8 @@ from .database import engine, Base
 from .models import user
 
 # Create database tables
+import time
+time.sleep(5)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Semantic Retrieval API")
