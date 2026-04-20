@@ -66,7 +66,7 @@ Verified flow:
 
 ## Load Testing
 
-A repo-local benchmark harness is included in [loadtests/benchmark.py](/Users/mansahaj/projects/seng468project/loadtests/benchmark.py:1).
+A Locust-based load testing setup is included under [loadtests](/Users/mansahaj/projects/seng468project/loadtests).
 
 It covers:
 - concurrent uploads
@@ -76,12 +76,13 @@ It covers:
 Run it after the stack is up:
 
 ```bash
-python3 loadtests/benchmark.py --base-url http://127.0.0.1:8080
+python3 -m pip install -r loadtests/requirements.txt
+python3 loadtests/run_locust_baseline.py --base-url http://127.0.0.1:8080
 ```
 
 Results are written to:
-- `loadtests/results/latest.json`
-- `loadtests/results/latest.md`
+- `loadtests/results/locust_summary.json`
+- `loadtests/results/locust_summary.md`
 
 ## Troubleshooting
 
