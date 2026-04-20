@@ -1,4 +1,3 @@
-import os
 import uuid
 from datetime import datetime
 
@@ -9,12 +8,10 @@ from app.auth_utils import get_current_user
 from app.database import get_db
 from app.models.document import Document
 from app.models.user import User
+from app.object_storage import delete_object, upload_pdf_object
 from app.task_queue import enqueue_document_processing
 
 router = APIRouter()
-
-UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 @router.post("", status_code=202)
@@ -31,17 +28,22 @@ async def upload_document(
         raise HTTPException(status_code=401, detail="User not found")
 
     doc_id = str(uuid.uuid4())
-    file_path = os.path.join(UPLOAD_DIR, f"{doc_id}.pdf")
+    object_key = f"{db_user.id}/{doc_id}.pdf"
+    file_content = await file.read()
 
-    with open(file_path, "wb") as buffer:
-        content = await file.read()
-        buffer.write(content)
+    try:
+        upload_pdf_object(object_key, file_content, file.content_type or "application/pdf")
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Failed to store PDF in object storage",
+        ) from exc
 
     new_doc = Document(
         id=doc_id,
         user_id=db_user.id,
         filename=file.filename,
-        storage_path=file_path,
+        storage_path=object_key,
         upload_date=datetime.utcnow(),
         status="processing",
         page_count=None,
@@ -116,8 +118,7 @@ async def delete_document(
             detail="Document not found or not owned by user"
         )
 
-    if os.path.exists(doc_to_delete.storage_path):
-        os.remove(doc_to_delete.storage_path)
+    delete_object(doc_to_delete.storage_path)
 
     db.delete(doc_to_delete)
     db.commit()
