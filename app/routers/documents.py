@@ -10,6 +10,7 @@ from app.models.document import Document
 from app.models.user import User
 from app.object_storage import delete_object, upload_pdf_object
 from app.task_queue import enqueue_document_processing
+from app.vector_store import delete_document_vectors
 
 router = APIRouter()
 
@@ -118,7 +119,14 @@ async def delete_document(
             detail="Document not found or not owned by user"
         )
 
-    delete_object(doc_to_delete.storage_path)
+    try:
+        delete_document_vectors(doc_to_delete.id)
+        delete_object(doc_to_delete.storage_path)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Failed to delete all document data",
+        ) from exc
 
     db.delete(doc_to_delete)
     db.commit()
