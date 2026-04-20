@@ -4,81 +4,113 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - ENVIRONMENT=development
-      - SECRET_KEY=your_secret_key_here
-      - DATABASE_URL=postgresql://myuser:mypassword@db:5432/mydb
-      - REDIS_URL=redis://redis:6379/0
-      - QDRANT_URL=http://qdrant:6333
-      - QDRANT_COLLECTION=document_chunks
-      - EMBEDDING_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
-      - MINIO_ENDPOINT=minio:9000
-      - MINIO_BUCKET=documents
-      - MINIO_SECURE=false
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - SECRET_KEY=${SECRET_KEY:-change-this-to-a-64-character-secret-key-for-local-dev-2026}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://seng468:seng468_postgres_password_change_me@db:5432/seng468}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
+      - QDRANT_COLLECTION=${QDRANT_COLLECTION:-document_chunks}
+      - EMBEDDING_MODEL_NAME=${EMBEDDING_MODEL_NAME:-sentence-transformers/all-MiniLM-L6-v2}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio:9000}
+      - MINIO_BUCKET=${MINIO_BUCKET:-documents}
+      - MINIO_SECURE=${MINIO_SECURE:-false}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-seng468minio}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-Seng468MinioPassword_2026_ChangeMe!}
       - HF_HOME=/models
     volumes:
       - ./app:/app/app # Live reload for dev
       - model_cache:/models
     depends_on:
-      - db
-      - redis
-      - minio
-      - qdrant
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/', timeout=5)"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
 
   worker:
     build: .
     command: ["python", "-m", "app.worker"]
     environment:
-      - ENVIRONMENT=development
-      - SECRET_KEY=your_secret_key_here
-      - DATABASE_URL=postgresql://myuser:mypassword@db:5432/mydb
-      - REDIS_URL=redis://redis:6379/0
-      - QDRANT_URL=http://qdrant:6333
-      - QDRANT_COLLECTION=document_chunks
-      - EMBEDDING_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
-      - MINIO_ENDPOINT=minio:9000
-      - MINIO_BUCKET=documents
-      - MINIO_SECURE=false
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - SECRET_KEY=${SECRET_KEY:-change-this-to-a-64-character-secret-key-for-local-dev-2026}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://seng468:seng468_postgres_password_change_me@db:5432/seng468}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
+      - QDRANT_COLLECTION=${QDRANT_COLLECTION:-document_chunks}
+      - EMBEDDING_MODEL_NAME=${EMBEDDING_MODEL_NAME:-sentence-transformers/all-MiniLM-L6-v2}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio:9000}
+      - MINIO_BUCKET=${MINIO_BUCKET:-documents}
+      - MINIO_SECURE=${MINIO_SECURE:-false}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-seng468minio}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-Seng468MinioPassword_2026_ChangeMe!}
       - HF_HOME=/models
     volumes:
       - ./app:/app/app
       - model_cache:/models
     depends_on:
-      - db
-      - redis
-      - minio
-      - qdrant
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
 
   db:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_USER=myuser
-      - POSTGRES_PASSWORD=mypassword
-      - POSTGRES_DB=mydb
+      - POSTGRES_USER=${POSTGRES_USER:-seng468}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-seng468_postgres_password_change_me}
+      - POSTGRES_DB=${POSTGRES_DB:-seng468}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-seng468} -d ${POSTGRES_DB:-seng468}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   minio:
     image: minio/minio:latest
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-seng468minio}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-Seng468MinioPassword_2026_ChangeMe!}
     ports:
       - "9000:9000"
       - "9001:9001"
     volumes:
       - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -86,6 +118,12 @@ services:
       - "6333:6333"
     volumes:
       - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -lc ': > /dev/tcp/127.0.0.1/6333'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   postgres_data:
