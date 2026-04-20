@@ -7,8 +7,11 @@ from minio.error import S3Error
 
 def get_minio_client() -> Minio:
     endpoint = os.getenv("MINIO_ENDPOINT", "localhost:9000")
-    access_key = os.getenv("MINIO_ROOT_USER", "minioadmin")
-    secret_key = os.getenv("MINIO_ROOT_PASSWORD", "minioadmin")
+    access_key = os.getenv("MINIO_ROOT_USER", "seng468minio")
+    secret_key = os.getenv(
+        "MINIO_ROOT_PASSWORD",
+        "Seng468MinioPassword_2026_ChangeMe!",
+    )
     secure = os.getenv("MINIO_SECURE", "false").lower() == "true"
     return Minio(
         endpoint,
