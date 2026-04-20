@@ -64,6 +64,25 @@ Verified flow:
 - delete document
 - confirm document and search results are removed
 
+## Load Testing
+
+A repo-local benchmark harness is included in [loadtests/benchmark.py](/Users/mansahaj/projects/seng468project/loadtests/benchmark.py:1).
+
+It covers:
+- concurrent uploads
+- concurrent searches
+- mixed upload/search workload
+
+Run it after the stack is up:
+
+```bash
+python3 loadtests/benchmark.py --base-url http://127.0.0.1:8080
+```
+
+Results are written to:
+- `loadtests/results/latest.json`
+- `loadtests/results/latest.md`
+
 ## Troubleshooting
 
 - If you change dependencies, rebuild with `docker compose up --build`.
