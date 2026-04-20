@@ -1,42 +1,61 @@
-from fastapi import APIRouter, Header, HTTPException, Query, Depends
-from typing import Optional
-from app.storage import chunks_db
+import re
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+
 from app.auth_utils import get_current_user
+from app.database import get_db
+from app.models.chunk import DocumentChunk
+from app.models.document import Document
+from app.models.user import User
 
 router = APIRouter()
 
+
+def tokenize(text: str) -> set[str]:
+    return set(re.findall(r"[a-z0-9]+", text.lower()))
+
+
+def calculate_score(query: str, text: str) -> float:
+    query_terms = tokenize(query)
+    text_terms = tokenize(text)
+    if not query_terms or not text_terms:
+        return 0.0
+
+    overlap = len(query_terms & text_terms)
+    return round(min(overlap / len(query_terms), 1.0), 3)
+
+
 @router.get("")
-async def search_documents(q: str = Query(..., description="The query to search for"), user: str = Depends(get_current_user)):
-    # Mock search logic
-    return [
-        {
-            "text": f"Machine learning optimization techniques include gradient descent, Adam optimizer, and stochastic methods that improve convergence rates significantly. Query was: {q}",
-            "score": 0.942,
-            "document_id": "uuid-123",
-            "filename": "research_paper.pdf"
-        },
-        {
-            "text": "Optimization in neural networks requires careful tuning of hyperparameters such as learning rate and batch size.",
-            "score": 0.867,
-            "document_id": "uuid-456",
-            "filename": "textbook_chapter.pdf"
-        },
-        {
-            "text": "Another relevant paragraph about optimization...",
-            "score": 0.812,
-            "document_id": "uuid-123",
-            "filename": "research_paper.pdf"
-        },
-        {
-            "text": "Fourth relevant paragraph...",
-            "score": 0.755,
-            "document_id": "uuid-789",
-            "filename": "ml_handbook.pdf"
-        },
-        {
-            "text": "Fifth relevant paragraph...",
-            "score": 0.701,
-            "document_id": "uuid-456",
-            "filename": "textbook_chapter.pdf"
-        }
-    ]
+async def search_documents(
+    q: str = Query(..., description="The query to search for"),
+    user: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    db_user = db.query(User).filter(User.username == user).first()
+    if not db_user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    rows = (
+        db.query(DocumentChunk, Document)
+        .join(Document, Document.id == DocumentChunk.document_id)
+        .filter(Document.user_id == db_user.id, Document.status == "ready")
+        .all()
+    )
+
+    scored_results = []
+    for chunk, document in rows:
+        score = calculate_score(q, chunk.text)
+        if score <= 0:
+            continue
+        scored_results.append(
+            {
+                "text": chunk.text,
+                "score": score,
+                "document_id": document.id,
+                "filename": document.filename,
+            }
+        )
+
+    scored_results.sort(key=lambda item: item["score"], reverse=True)
+    return scored_results[:5]

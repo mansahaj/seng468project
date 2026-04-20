@@ -2,13 +2,21 @@ import os
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    UploadFile,
+)
 from sqlalchemy.orm import Session
 
 from app.auth_utils import get_current_user
 from app.database import get_db
 from app.models.document import Document
 from app.models.user import User
+from app.services.processing import process_document
 
 router = APIRouter()
 
@@ -16,8 +24,9 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-@router.post("/", status_code=202)
+@router.post("", status_code=202)
 async def upload_document(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     user: str = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -47,15 +56,16 @@ async def upload_document(
     )
     db.add(new_doc)
     db.commit()
+    background_tasks.add_task(process_document, doc_id)
 
     return {
-        "message": "PDF uploaded and saved",
+        "message": "PDF uploaded, processing started",
         "document_id": doc_id,
         "status": "processing",
     }
 
 
-@router.get("/")
+@router.get("")
 async def list_documents(
     user: str = Depends(get_current_user),
     db: Session = Depends(get_db),

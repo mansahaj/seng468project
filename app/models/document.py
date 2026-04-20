@@ -19,3 +19,8 @@ class Document(Base):
     page_count = Column(Integer, nullable=True)
 
     user = relationship("User", back_populates="documents")
+    chunks = relationship(
+        "DocumentChunk",
+        back_populates="document",
+        cascade="all, delete-orphan",
+    )
