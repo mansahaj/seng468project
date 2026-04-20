@@ -2,31 +2,23 @@ import os
 import uuid
 from datetime import datetime
 
-from fastapi import (
-    APIRouter,
-    BackgroundTasks,
-    Depends,
-    File,
-    HTTPException,
-    UploadFile,
-)
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.auth_utils import get_current_user
 from app.database import get_db
 from app.models.document import Document
 from app.models.user import User
-from app.services.processing import process_document
+from app.task_queue import enqueue_document_processing
 
 router = APIRouter()
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 @router.post("", status_code=202)
 async def upload_document(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     user: str = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -56,7 +48,16 @@ async def upload_document(
     )
     db.add(new_doc)
     db.commit()
-    background_tasks.add_task(process_document, doc_id)
+
+    try:
+        enqueue_document_processing(doc_id)
+    except Exception as exc:
+        new_doc.status = "failed"
+        db.commit()
+        raise HTTPException(
+            status_code=503,
+            detail="Failed to enqueue document processing job",
+        ) from exc
 
     return {
         "message": "PDF uploaded, processing started",
