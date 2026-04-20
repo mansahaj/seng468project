@@ -68,9 +68,9 @@ def search_chunk_vectors(
 ) -> list[dict]:
     ensure_collection_exists(len(query_vector))
     client = get_qdrant_client()
-    results = client.search(
+    response = client.query_points(
         collection_name=get_collection_name(),
-        query_vector=query_vector,
+        query=query_vector,
         query_filter=models.Filter(
             must=[
                 models.FieldCondition(
@@ -82,6 +82,7 @@ def search_chunk_vectors(
         limit=limit,
         with_payload=True,
     )
+    results = response.points
 
     return [
         {
