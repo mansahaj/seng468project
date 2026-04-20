@@ -1,10 +1,15 @@
 from datetime import datetime, timedelta, timezone
-from fastapi import Header, HTTPException
+import os
 from typing import Optional
+
 import jwt
+from fastapi import Header, HTTPException
 from passlib.context import CryptContext
 
-SECRET_KEY = "your_super_long_secret_key_at_least_32_chars"
+SECRET_KEY = os.getenv(
+    "SECRET_KEY",
+    "your_super_long_secret_key_at_least_32_chars",
+)
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 

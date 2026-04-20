@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from .routers import auth, documents, search
 from .database import engine, Base
-from .models import document, user
+from .models import chunk, document, user
 
 # Create database tables
 import time
